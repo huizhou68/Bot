@@ -586,7 +586,7 @@
         const res = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ passcode, message })
+          body: JSON.stringify({ passcode, message: msg })
         });
         const data = await res.json();
 
