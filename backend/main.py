@@ -23,9 +23,6 @@ load_dotenv()
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
-@app.get("/")
-def home():
-    return {"message": "Welcome to FuBot!"}
 
 app.add_middleware(
     CORSMiddleware,
