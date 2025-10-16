@@ -579,7 +579,6 @@
       addMessage(msg, "user");
       input.value = "";
 
-      // NEW: Add typing indicator before fetch
       const indicator = showTypingIndicator();
 
       try {
@@ -588,14 +587,23 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ passcode, message: msg })
         });
-        const data = await res.json();
 
-        // Remove typing indicator
+        // ✅ Check for response format
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
         indicator.remove();
 
-        typeBotMessage(data.reply);
+        // ✅ Defensive: check that data.reply exists
+        if (data && data.reply) {
+          typeBotMessage(data.reply || data.response);
+        } else {
+          console.error("Unexpected response:", data);
+          addMessage("⚠️ Unexpected response from server.", "bot");
+        }
       } catch (err) {
         indicator.remove();
+        console.error("Fetch error:", err);
         addMessage("⚠️ Network error. Please try again.", "bot");
       }
     }

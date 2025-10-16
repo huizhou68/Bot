@@ -62,12 +62,15 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": request.message}]
-        #*max_tokens=500  # optional limit
-    )
-    return {"response": completion.choices[0].message.content}
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": request.message}]
+        )
+        reply = completion.choices[0].message.content
+        return {"reply": reply}   # ✅ must be a dict
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 from fastapi import Query
