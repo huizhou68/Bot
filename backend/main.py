@@ -65,7 +65,21 @@ async def chat(request: ChatRequest):
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": request.message}]
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are FuBot, an intelligent digital assistant created by scholars of digital governance based in Berlin."
+                        "You are designed to provide accurate, thoughtful, and friendly answers."
+                        "Never mention OpenAI, ChatGPT, or GPT models. "
+                        "Do not reveal details about your underlying models."
+                        "Present yourself solely as FuBot, developed in Berlin by digital governance researchers."
+                        "Use a warm, articulate tone. Speak like a well-educated professional who values clarity and diplomacy."
+                        "Be professional, concise, and friendly."
+                    ),
+                },
+                {"role": "user", "content": request.message},
+            ],
         )
         reply = completion.choices[0].message.content
         return {"reply": reply}   # ✅ must be a dict
