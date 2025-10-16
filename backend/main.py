@@ -49,10 +49,12 @@ class ChatRequest(BaseModel):
     passcode: str
     message: str
 
+class PasscodeRequest(BaseModel):
+    passcode: str
 
 @app.post("/auth")
-def authenticate(passcode: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.passcode == passcode).first()
+def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.passcode == request.passcode).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid passcode")
     return {"message": "Authenticated"}

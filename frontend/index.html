@@ -544,28 +544,23 @@
       const passcode = document.getElementById("passcode-input").value.trim();
       if (!passcode) return alert("Please enter your passcode");
 
-      const res = await fetch(`${apiBase}/auth`, {
+      const res = await fetch("/auth", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ passcode })
       });
 
       if (res.ok) {
-        // Save passcode for this session
         sessionStorage.setItem(passcodeKey, passcode);
-
-        // Clear any previous chat
         sessionStorage.removeItem(historyKey);
 
-        // Hide login screen and show chat container
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("chat-container").style.display = "flex";
 
-        // 👇 This is the new line you need to add
         fetchHistoryFromBackend(passcode);
-
       } else {
-        alert("Invalid passcode. Try again.");
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || "Invalid passcode. Try again.");
       }
     }
 
