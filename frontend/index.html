@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FuBot</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <style>
+    /* --- Global layout --- */
+    body {
+      font-family: "Poppins", system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- Header (full width) --- */
+    #chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 24px;
+      width: 100%;
+      background: #ffffff;
+      /*border-bottom: 1px solid #eaeaea;*/
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    #chat-logo {
+      width: 32px;
+      height: auto;
+      margin-right: 0px;
+      position: relative;
+      top: -1px;             /* ✅ nudges it upward to align perfectly with text baseline */
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+    }
+
+    #chat-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2d3748;
+      /*position: relative;*/
+      /*top: 2px;*/
+    }
+
+    #chat-title strong {
+      color: #007bff;
+    }
+
+    /* --- Centered main chat section --- */
+    #chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 100px; /* space for fixed header */
+      padding-bottom: 100px; /* space for input area */
+      overflow-y: auto;
+    }
+
+    /* Chat area (messages) */
+    #chatbox {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      overflow-y: auto;
+    }
+
+    /* Base message styling */
+    .message {
+      margin-bottom: 16px;
+      line-height: 1.55;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      max-width: 100%;
+      font-size: 1rem;
+      font-family: "Poppins", system-ui, sans-serif;
+    }
+
+    /* User messages — slightly narrower and right aligned */
+    .message.user {
+      align-self: flex-end;
+      background: #d1e7ff;
+      color: #1a1a1a;
+      border-radius: 16px;
+      border-bottom-right-radius: 4px;
+      padding: 10px 18px;
+      width: 70%; /* ✅ 70% of the 50% chat width (0.7 × 50% ≈ 35%) */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Bot messages — plain text, no bubble box */
+    .message.bot {
+      align-self: flex-start;
+      color: #1a1a1a;
+      background: transparent; /* ✅ no box or color */
+      border: none;
+      padding: 0;
+      width: 100%; /* match main chat width for text flow */
+    }
+
+    /* --- Input area (centered, same width as chat) --- */
+    #input-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;                  /* ✅ spans full width for subtle bar */
+      background: #ffffff;
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.01);
+      display: flex;
+      justify-content: center;      /* centers inner input box */
+      padding: 14px 0;              /* balanced vertical spacing */
+      z-index: 10;
+    }
+
+    /* Inner wrapper (input + button) centered within chat width */
+    #input-wrapper {
+      width: 50%;                   /* ✅ match chat width */
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Input and button styling */
+    #message-input {
+      flex: 1;
+      padding: 14px 18px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 24px;
+      outline: none;
+      background: #f7f7f8;
+    }
+
+    #message-input:focus {
+      background: #ffffff;
+      border: 1px solid #999; /* neutral, visible gray border */
+      outline: none;
+      box-shadow: none;
+    }
+
+    #send-btn {
+      padding: 12px 22px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 24px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #send-btn:hover {
+      background: #005fcc;
+    }
+
+    
+
+    /* --- Mobile layout --- */
+    @media (max-width: 768px) {
+      #chatbox,
+      #input-area {
+        width: 90%;
+      }
+
+      #chat-title {
+        font-size: 1.1rem;
+      }
+
+      #chat-logo {
+        width: 50px;
+        height: 50px;
+      }
+    }
+
+    /* Typing dots */
+    .typing {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border-radius: 50%;
+      background-color: #888;
+      margin-right: 3px;
+      animation: blink 1.2s infinite ease-in-out both;
+    }
+    .typing:nth-child(2) { animation-delay: 0.2s; }
+    .typing:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
+
+    #input-area {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+      font-size: 1em;
+    }
+
+    button {
+      padding: 12px 16px;
+      border: none;
+      background: #007bff;
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      /* Background image */
+      background-image: url("/static/background2.jpg"); /* or your own image URL */
+      background-size: cover;        /* fills entire screen */
+      background-position: center;   /* centers image */
+      background-repeat: no-repeat;
+      background-attachment: fixed;  /* subtle parallax effect */
+
+      /* Dark overlay for contrast */
+      background-color: rgba(0, 0, 0, 0.25);
+      background-blend-mode: darken;
+
+      /* Subtle blur for modern look */
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* 👇 Add your brand + tagline styles here */
+    #brand {
+      font-size: 3rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      margin-bottom: 0.3em;
+    }
+
+    #tagline {
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 1.5em;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    #logo {
+      width: 100px;
+      height: auto;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+    }
+
+    #login-screen h2,
+    #login-screen input,
+    #login-screen button {
+      color: white;
+      z-index: 1;
+    }
+
+    /* Input styling for readability */
+    #login-screen input {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 6px;
+    }
+
+    #login-screen input::placeholder {
+      color: rgba(255,255,255,0.8);
+    }
+
+    #login-screen button {
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: background 0.3s ease;
+    }
+
+    #login-screen button:hover {
+      background: rgba(255,255,255,0.5);
+    }
+
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      #login-screen {
+        background-attachment: scroll;
+        backdrop-filter: blur(4px);
+      }
+    }
+
+    #login-screen input {
+      padding: 10px;
+      font-size: 1em;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #login-screen button {
+      padding: 10px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  
+
+
+  /* Smooth fade-in animation for bot messages */
+  .message.bot {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+
+  /* Normalize Markdown spacing INSIDE bubbles */
+  .message p,
+  .message ul,
+  .message ol,
+  .message pre,
+  .message code,
+  .message blockquote {
+    margin: 0;              /* kill default outside margins */
+  }
+
+  /* Restore gentle vertical rhythm */
+  .message p + p,
+  .message p + ul,
+  .message p + ol,
+  .message ul + p,
+  .message ol + p,
+  .message pre + p,
+  .message p + pre,
+  .message blockquote + p {
+    margin-top: 0.5em;      /* controlled spacing between blocks */
+  }
+
+  /* Make first/last child not add extra space at bubble edges */
+  .message > :first-child { margin-top: 0 !important; }
+  .message > :last-child  { margin-bottom: 0 !important; }
+
+  /* Lists look tidy but don’t push bubble edges */
+  .message ul, .message ol {
+    padding-left: 1.2em;    /* list indent */
+  }
+
+  /* Code blocks look neat but don’t bloat bottom */
+  .message pre {
+    padding: 8px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    overflow-x: auto;
+  }
+
+  /* Inline code */
+  .message code {
+    background: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  /* Keep your bubble’s own vertical padding modest & symmetric */
+  .message {
+    padding: 10px 18px;     /* equal top/bottom */
+    line-height: 1.5;
+  }
+
+  /* Optical vertical centering fix for chat bubbles */
+  .message {
+    position: relative;
+  }
+
+  .message::before {
+    content: "";
+    display: block;
+    height: 0;
+    margin-top: -0.3em;   /* lift text visually ≈ 2px at 1rem size */
+  }
+
+
+  /* --- Compact spacing between section titles and bullet lists inside chat messages --- */
+  /* Reduce space below titles when followed by a list */
+  .message h1 + ul,
+  .message h2 + ul,
+  .message h3 + ul,
+  .message h4 + ul,
+  .message h5 + ul,
+  .message h6 + ul,
+  .message h1 + ol,
+  .message h2 + ol,
+  .message h3 + ol,
+  .message h4 + ol,
+  .message h5 + ol,
+  .message h6 + ol {
+    margin-top: 0.01em;  /* ✅ tighten gap between header and list */
+  }
+
+  /* Reduce top and bottom margins for all headings inside messages */
+  .message h1,
+  .message h2,
+  .message h3,
+  .message h4,
+  .message h5,
+  .message h6 {
+    margin-top: 0.1em;   /* less top space */
+    margin-bottom: 0.05em; /* less bottom space */
+    line-height: 1.3;
+  }
+
+  /* Reduce spacing between list items */
+  .message ul,
+  .message ol {
+    margin-top: 0.05em;   /* tighten above list */
+    margin-bottom: 0.1em;
+    padding-left: 1.2em;
+  }
+
+  /* --- Reduce spacing between numbered and bulleted lists inside chat messages --- */
+
+  /* Remove big gap when one list follows another */
+  .message ol + ul,
+  .message ul + ol {
+    margin-top: 0.01em;   /* ✅ reduce vertical gap between consecutive lists */
+  }
+
+  /* Keep consistent spacing between any lists and other elements */
+  .message p + ul,
+  .message p + ol,
+  .message ul + p,
+  .message ol + p {
+    margin-top: 0.1em;
+  }
+
+  /* General list tightening (keeps everything neat) */
+  .message ul,
+  .message ol {
+    margin-top: 0.03em;
+    margin-bottom: 0.05em;
+    padding-left: 1.2em;
+  }
+
+  .message li {
+    margin-bottom: 0.01em;
+    line-height: 1.5;
+  }
+
+  /* Inline logo next to FuBot title */
+  #brand-logo {
+    width: 50px;              /* adjust size */
+    height: auto;
+    margin-left: 8px;        /* space between text and logo */
+    position: relative;
+    top: 5px;                  /* ✅ nudges image upward for perfect alignment */
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  }
+
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <h1 id="brand">
+      FuBot
+      <img id="brand-logo" src="/static/logo2.png" alt="FuBot logo" />
+    </h1>
+    <p id="tagline">Made in Germany</p>
+    <h2>Please enter your passcode to start a chat!</h2>
+    <input id="passcode-input" placeholder="Passcode" />
+    <button onclick="login()">Enter</button>
+  </div>
+
+  <div id="chat-container" style="display:none;">
+
+    <!-- Header: full width -->
+    <header id="chat-header">
+      <img id="chat-logo" src="/static/logo2.png" alt="FuBot logo" />
+      <span id="chat-title"><strong>FuBot</strong> | AI Assistant Truly for You</span>
+    </header>
+
+    <!-- Centered chat section -->
+    <div id="chat-main">
+      <div id="chatbox"></div>
+
+      <div id="input-area">
+        <div id="input-wrapper">
+          <input id="message-input" placeholder="Type your message..." />
+          <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+  <script>
+    const apiBase = "http://127.0.0.1:8000";
+    const passcodeKey = "chat_passcode";
+    const historyKey = "chat_history";
+    let historyOffset = 0;
+    const historyLimit = 20;
+    let totalMessages = 0;
+    let loadingHistory = false;
+
+    window.onload = function() {
+      const savedPasscode = sessionStorage.getItem(passcodeKey);
+      if (savedPasscode) {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("chat-container").style.display = "flex";
+        fetchHistoryFromBackend(savedPasscode);
+      }
+    };
+
+    async function login() {
+      const passcode = document.getElementById("passcode-input").value.trim();
+      if (!passcode) return alert("Please enter your passcode");
+
+      const res = await fetch(`${apiBase}/auth`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ passcode })
+      });
+
+      if (res.ok) {
+        // Save passcode for this session
+        sessionStorage.setItem(passcodeKey, passcode);
+
+        // Clear any previous chat
+        sessionStorage.removeItem(historyKey);
+
+        // Hide login screen and show chat container
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("chat-container").style.display = "flex";
+
+        // 👇 This is the new line you need to add
+        fetchHistoryFromBackend(passcode);
+
+      } else {
+        alert("Invalid passcode. Try again.");
+      }
+    }
+
+    async function sendMessage() {
+      const passcode = sessionStorage.getItem(passcodeKey);
+      if (!passcode) {
+        alert("Session expired. Please re-enter your passcode.");
+        location.reload();
+        return;
+      }
+
+      const input = document.getElementById("message-input");
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      addMessage(msg, "user");
+      input.value = "";
+
+      // NEW: Add typing indicator before fetch
+      const indicator = showTypingIndicator();
+
+      try {
+        const res = await fetch(`${apiBase}/chat`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ passcode, message: msg })
+        });
+        const data = await res.json();
+
+        // Remove typing indicator
+        indicator.remove();
+
+        typeBotMessage(data.reply);
+      } catch (err) {
+        indicator.remove();
+        addMessage("⚠️ Network error. Please try again.", "bot");
+      }
+    }
+
+    function addMessage(text, sender) {
+      const chatbox = document.getElementById("chatbox");
+      const div = document.createElement("div");
+      div.classList.add("message", sender);
+
+      // Convert Markdown to HTML
+      const formatted = marked.parse(text);
+      div.innerHTML = formatted;
+
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      // Save message to session storage
+      saveMessage({ text, sender });
+    }
+
+    function saveMessage(message) {
+      let history = JSON.parse(sessionStorage.getItem(historyKey)) || [];
+      history.push(message);
+      sessionStorage.setItem(historyKey, JSON.stringify(history));
+    }
+
+    function loadMessages() {
+      const history = JSON.parse(sessionStorage.getItem(historyKey)) || [];
+      for (const msg of history) {
+        const div = document.createElement("div");
+        div.classList.add("message", msg.sender);
+        div.innerHTML = marked.parse(msg.text);
+        document.getElementById("chatbox").appendChild(div);
+      }
+      const chatbox = document.getElementById("chatbox");
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    async function fetchHistoryFromBackend(passcode, append = false) {
+      if (loadingHistory) return;
+      loadingHistory = true;
+
+      try {
+        const res = await fetch(`${apiBase}/history?offset=${historyOffset}&limit=${historyLimit}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode })
+      });
+
+        if (!res.ok) {
+          console.error("Failed to load history:", res.status);
+          loadingHistory = false;
+          return;
+        }
+
+        const data = await res.json();
+        const messages = data.history || [];
+        totalMessages = data.total || 0;
+
+        const chatbox = document.getElementById("chatbox");
+
+        // If we're loading older history, prepend it
+        if (append) {
+          const oldScroll = chatbox.scrollHeight;
+          const firstMsg = chatbox.firstChild;
+
+          for (const msg of messages) {
+            const div = document.createElement("div");
+            div.classList.add("message", msg.sender);
+            div.innerHTML = marked.parse(msg.text);
+            chatbox.insertBefore(div, firstMsg);
+          }
+
+          // Maintain scroll position after prepending
+          const newScroll = chatbox.scrollHeight - oldScroll;
+          chatbox.scrollTop = newScroll;
+
+        } else {
+          // Initial load — newest messages only
+          chatbox.innerHTML = "";
+          for (const msg of messages) {
+            const div = document.createElement("div");
+            div.classList.add("message", msg.sender);
+            div.innerHTML = marked.parse(msg.text);
+            chatbox.appendChild(div);
+          }
+          chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+          // Update offset for next load
+          historyOffset += messages.length;
+          loadingHistory = false;
+
+        } catch (err) {
+          console.error("Error loading chat history:", err);
+          loadingHistory = false;
+        }
+      }
+
+    // NEW: Typing indicator
+    function showTypingIndicator() {
+      const chatbox = document.getElementById("chatbox");
+      const div = document.createElement("div");
+      div.classList.add("message", "bot");
+      div.innerHTML = `
+        <span class="typing"></span>
+        <span class="typing"></span>
+        <span class="typing"></span>
+      `;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+      return div;
+    }
+
+    // Typing animation for bot messages
+    function typeBotMessage(markdownText) {
+      const chatbox = document.getElementById("chatbox");
+      const div = document.createElement("div");
+      div.classList.add("message", "bot");
+      chatbox.appendChild(div);
+
+      // Convert markdown to HTML
+      const formattedHTML = marked.parse(markdownText);
+
+      // Use a temporary element to extract plain text without HTML tags for typing
+      const tempEl = document.createElement("div");
+      tempEl.innerHTML = formattedHTML;
+      const plainText = tempEl.textContent || tempEl.innerText || "";
+
+      // Animate typing character by character
+      let i = 0;
+      //const speed = 25; // milliseconds between characters
+      const speed = 1; // HZ's setting to make it faster
+      const typingInterval = setInterval(() => {
+        div.textContent = plainText.slice(0, i);
+        chatbox.scrollTop = chatbox.scrollHeight;
+        i++;
+        if (i > plainText.length) {
+          clearInterval(typingInterval);
+          // Replace with formatted HTML once typing is done
+          div.innerHTML = formattedHTML;
+        }
+      }, speed);
+    }
+
+    document.addEventListener("keypress", function(e) {
+      if (e.key === "Enter" && document.activeElement.id === "message-input") {
+        sendMessage();
+      }
+    });
+
+    document.getElementById("chatbox").addEventListener("scroll", async function() {
+      const chatbox = this;
+      const passcode = sessionStorage.getItem(passcodeKey);
+
+      // If near top and more history exists, load more
+      if (chatbox.scrollTop < 50 && historyOffset < totalMessages) {
+        await fetchHistoryFromBackend(passcode, true);
+      }
+    });
+
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>
