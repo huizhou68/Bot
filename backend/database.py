@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Read the database URL from environment variables (Render sets it)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./chatbot.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///backend/chatbot.db")
 
 # For SQLite, need special argument; for PostgreSQL, it's ignored
 if DATABASE_URL.startswith("sqlite"):

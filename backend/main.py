@@ -51,12 +51,11 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/auth")
-def authenticate(request: AuthRequest):
-    with engine.begin() as conn:
-        result = conn.execute(text("SELECT * FROM users WHERE passcode = :p"), {"p": request.passcode}).fetchone()
-        if not result:
-            raise HTTPException(status_code=401, detail="Invalid passcode")
-    return {"status": "success", "message": "Authenticated"}
+def authenticate(passcode: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.passcode == passcode).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid passcode")
+    return {"message": "Authenticated"}
 
 
 @app.post("/chat")
