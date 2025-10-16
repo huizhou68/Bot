@@ -135,3 +135,9 @@ def add_passcode(passcode: str, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     return {"message": f"Passcode '{passcode}' added successfully!"}
+
+
+@app.get("/list_passcodes")
+def list_passcodes(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    return {"passcodes": [u.passcode for u in users]}
