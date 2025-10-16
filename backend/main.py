@@ -1,3 +1,10 @@
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from backend.database import Base, engine, get_db
+from backend.models import User
+
+
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
@@ -10,15 +17,16 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from models import User  # or whatever your user model is called
+
 
 load_dotenv()
 
 app = FastAPI()
-# Allow requests from your local frontend
+Base.metadata.create_all(bind=engine)
+@app.get("/")
+def home():
+    return {"message": "Welcome to FuBot!"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # You can restrict this later if needed
