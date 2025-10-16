@@ -583,10 +583,10 @@
       const indicator = showTypingIndicator();
 
       try {
-        const res = await fetch(`${apiBase}/chat`, {
+        const res = await fetch("/chat", {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ passcode, message: msg })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passcode, message })
         });
         const data = await res.json();
 

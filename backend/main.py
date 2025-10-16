@@ -61,27 +61,12 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 
 
 @app.post("/chat")
-def chat(request: ChatRequest):
-    with engine.begin() as conn:
-        result = conn.execute(text("SELECT * FROM users WHERE passcode = :p"), {"p": request.passcode}).fetchone()
-        if not result:
-            raise HTTPException(status_code=401, detail="Invalid passcode")
-
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": request.message}]
-        )
-        answer = completion.choices[0].message.content
-
-        conn.execute(
-            text("""
-                INSERT INTO chat_history (passcode, user_message, bot_response)
-                VALUES (:p, :m, :r)
-            """),
-            {"p": request.passcode, "m": request.message, "r": answer}
-        )
-
-    return {"reply": answer}
+async def chat(request: ChatRequest):
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=request.messages
+    )
+    return {"response": completion.choices[0].message.content}
 
 
 from fastapi import Query
