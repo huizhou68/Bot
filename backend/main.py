@@ -10,6 +10,11 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from models import User  # or whatever your user model is called
+
 load_dotenv()
 
 app = FastAPI()
@@ -118,3 +123,10 @@ def get_history(
         messages.reverse()
 
         return JSONResponse(content={"history": messages, "total": total})
+
+@app.post("/add_passcode")
+def add_passcode(passcode: str, db: Session = Depends(get_db)):
+    new_user = User(passcode=passcode)
+    db.add(new_user)
+    db.commit()
+    return {"message": f"Passcode '{passcode}' added successfully!"}
