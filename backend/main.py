@@ -22,6 +22,12 @@ user_contexts = {}  # temporary memory for ongoing chats
 load_dotenv()
 
 app = FastAPI()
+
+import logging
+
+# Show detailed error info in Render logs
+logging.basicConfig(level=logging.DEBUG)
+
 Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
@@ -113,6 +119,9 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         return {"reply": reply}
 
     except Exception as e:
+        import traceback
+        print("=== CHAT ERROR ===")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
