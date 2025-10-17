@@ -9,6 +9,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     passcode = Column(String, unique=True, index=True)
+    last_login = Column(DateTime, nullable=True, default=None)
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"

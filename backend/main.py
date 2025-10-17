@@ -1,5 +1,5 @@
 # Everything Is Good at This Point
-# 00:49:50, 18.10.2025
+# 01:52:27, 18.10.2025
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -16,7 +16,7 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
-
+from datetime import datetime
 
 
 load_dotenv()
@@ -56,6 +56,10 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.passcode == request.passcode).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid passcode")
+    
+    user.last_login = datetime.utcnow()
+    db.commit()
+    
     return {"message": "Authenticated"}
 
 
