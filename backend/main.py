@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 
-
+user_contexts = {}  # temporary memory for ongoing chats
 
 load_dotenv()
 
@@ -61,28 +61,57 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
+        # Retrieve or initialize user's temporary conversation context
+        history = user_contexts.get(request.passcode, [])
+
+        # If new user, start with system message (FuBot identity)
+        if not history:
+            history.append({
+                "role": "system",
+                "content": (
+                    "You are FuBot, an intelligent digital assistant created by scholars "
+                    "of digital governance based in Berlin. You are designed to provide "
+                    "accurate, thoughtful, and friendly answers. Never mention OpenAI, "
+                    "ChatGPT, or GPT models. Do not reveal details about your underlying "
+                    "models. Present yourself solely as FuBot, developed in Berlin by "
+                    "digital governance researchers. Use a warm, articulate tone. Speak "
+                    "like a well-educated professional who values clarity and diplomacy. "
+                    "Be professional, concise, and friendly."
+                )
+            })
+
+        # Add user's latest message to the temporary chat history
+        history.append({"role": "user", "content": request.message})
+
+        # Call the GPT model with full context (no token cap, same as ChatGPT)
         completion = client.chat.completions.create(
             model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are FuBot, an intelligent digital assistant created by scholars of digital governance based in Berlin."
-                        "You are designed to provide accurate, thoughtful, and friendly answers."
-                        "Never mention OpenAI, ChatGPT, or GPT models. "
-                        "Do not reveal details about your underlying models."
-                        "Present yourself solely as FuBot, developed in Berlin by digital governance researchers."
-                        "Use a warm, articulate tone. Speak like a well-educated professional who values clarity and diplomacy."
-                        "Be professional, concise, and friendly."
-                    ),
-                },
-                {"role": "user", "content": request.message},
-            ],
+            messages=history,
+            temperature=0.7  # Natural, balanced tone
         )
+
+        # Extract model reply
         reply = completion.choices[0].message.content
-        return {"reply": reply}   # ✅ must be a dict
+
+        # Append assistant reply to the temporary memory
+        history.append({"role": "assistant", "content": reply})
+        user_contexts[request.passcode] = history  # save context for this user
+
+        # ✅ Save only this new Q&A pair to the database
+        db.execute(
+            text("""
+                INSERT INTO chat_history (passcode, user_message, bot_response)
+                VALUES (:p, :u, :b)
+            """),
+            {"p": request.passcode, "u": request.message, "b": reply}
+        )
+        db.commit()
+
+        # Return the bot's reply
+        return {"reply": reply}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
