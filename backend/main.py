@@ -1,5 +1,5 @@
 # Everything Is Good at This Point
-# 00:41:10, 18.10.2025
+# 00:49:50, 18.10.2025
 
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -145,3 +145,16 @@ def add_passcode(passcode: str, db: Session = Depends(get_db)):
 def list_passcodes(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return {"passcodes": [u.passcode for u in users]}
+
+@app.delete("/delete_passcode")
+def delete_passcode(passcode: str, db: Session = Depends(get_db)):
+    # Check if passcode exists
+    user = db.query(User).filter(User.passcode == passcode).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Passcode '{passcode}' not found.")
+
+    # Delete user
+    db.delete(user)
+    db.commit()
+
+    return {"message": f"Passcode '{passcode}' deleted successfully!"}
