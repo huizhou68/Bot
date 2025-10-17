@@ -1,7 +1,7 @@
 # Everything Is Good at This Point
 # 00:49:50, 18.10.2025
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from backend.database import Base, engine, get_db
 from backend.models import User
@@ -93,11 +93,10 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         db.commit()
 
         return {"reply": reply}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-from fastapi import Query
 
 @app.post("/history")
 def get_history(
@@ -143,6 +142,7 @@ def get_history(
 
         return JSONResponse(content={"history": messages, "total": total})
 
+
 @app.post("/add_passcode")
 def add_passcode(passcode: str, db: Session = Depends(get_db)):
     new_user = User(passcode=passcode)
@@ -155,6 +155,7 @@ def add_passcode(passcode: str, db: Session = Depends(get_db)):
 def list_passcodes(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return {"passcodes": [u.passcode for u in users]}
+
 
 @app.delete("/delete_passcode")
 def delete_passcode(passcode: str, db: Session = Depends(get_db)):
