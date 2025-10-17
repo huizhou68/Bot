@@ -1,5 +1,5 @@
 # Everything Is Good
-# 13:23:07, 17.10.2025
+# 
 
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 
-user_contexts = {}
+
 
 load_dotenv()
 
@@ -66,22 +66,12 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
-
-        # Load context for this passcode, or start fresh
-        MAX_TOKENS_HISTORY = 8000
-        history = user_contexts.get(request.passcode, [])
-
-        # Before sending to API:
-        while num_tokens(history) > MAX_TOKENS_HISTORY:
-            # Drop the oldest user+assistant pair (but keep system message)
-            history.pop(1)
-            history.pop(1)
-        # This way FuBot “forgets” very old exchanges but keeps the recent context that matters.
-        
-        # Add the system message only once (at the start)
-        if not history:
-            history.append({
-            "role": "system",
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0.7,
+            messages=[
+                {
+                    "role": "system",
                     "content": (
                         "You are FuBot, an intelligent digital assistant created by scholars of digital governance based in Berlin."
                         "You are designed to provide accurate, thoughtful, and friendly answers."
@@ -90,25 +80,12 @@ async def chat(request: ChatRequest):
                         "Present yourself solely as FuBot, developed in Berlin by digital governance researchers."
                         "Use a warm, articulate tone. Speak like a well-educated professional who values clarity and diplomacy."
                         "Be professional, concise, and friendly."
-                    )
-            })
-
-        # Add the user message
-        history.append({"role": "user", "content": request.message})
-
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            temperature=0.7,
-            messages=history
+                    ),
+                },
+                {"role": "user", "content": request.message},
+            ],
         )
         reply = completion.choices[0].message.content
-
-        # Save assistant’s reply in history
-        history.append({"role": "assistant", "content": reply})
-
-        # Store updated context back
-        user_contexts[request.passcode] = history
-
         return {"reply": reply}   # ✅ must be a dict
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
