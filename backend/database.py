@@ -1,23 +1,19 @@
+# Good at this point
+# 00:40:12, 18.10.2025
+
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
 
-# Read the database URL from environment variables (Render sets it)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///backend/chatbot.db")
+load_dotenv()
 
-# For SQLite, need special argument; for PostgreSQL, it's ignored
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(
-        DATABASE_URL, connect_args={"check_same_thread": False}
-    )
-else:
-    engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Dependency for FastAPI routes
 def get_db():
     db = SessionLocal()
     try:

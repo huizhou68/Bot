@@ -1,13 +1,10 @@
-# Everything Is Good
-# 
+# Everything Is Good at This Point
+# 00:41:10, 18.10.2025
 
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database import Base, engine, get_db
 from backend.models import User
-
-
-
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
@@ -35,7 +32,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-engine = create_engine(os.getenv("DATABASE_URL"))
 
 # Serve the frontend (HTML, JS, CSS)
 frontend_path = pathlib.Path(__file__).parent.parent / "frontend"
