@@ -60,7 +60,7 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
@@ -82,7 +82,17 @@ async def chat(request: ChatRequest):
             ],
         )
         reply = completion.choices[0].message.content
-        return {"reply": reply}   # ✅ must be a dict
+
+        db.execute(
+            text("""
+                INSERT INTO chat_history (passcode, user_message, bot_response)
+                VALUES (:p, :u, :b)
+            """),
+            {"p": request.passcode, "u": request.message, "b": reply}
+        )
+        db.commit()
+
+        return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
