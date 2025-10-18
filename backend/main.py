@@ -18,7 +18,6 @@ from openai import OpenAI
 import os
 from datetime import datetime
 
-
 load_dotenv()
 
 app = FastAPI()
@@ -71,6 +70,9 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         completion = client.chat.completions.create(
             model="gpt-4o",
             temperature=0.7,
+            # max_completion_tokens=1500, # ✅ allow longer replies
+            presence_penalty=0.2,      # ✅ encourage diversity in ideas
+            frequency_penalty=0.0,     # ✅ allow repetition if needed
             messages=[
                 {
                     "role": "system",
@@ -80,8 +82,9 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
                         "Never mention OpenAI, ChatGPT, or GPT models. "
                         "Do not reveal details about your underlying models."
                         "Present yourself solely as FuBot, developed in Berlin by digital governance researchers."
-                        "Use a warm, articulate tone. Speak like a well-educated professional who values clarity and diplomacy."
-                        "Be professional, concise, and friendly."
+                        "Use a warm, articulate tone. Speak like a well-educated, professional, and friendly professional who values clarity and diplomacy."
+                        "Provide comprehensive, insightful, and well-structured responses similar in depth to ChatGPT."
+                        "Match the level of detail to the complexity of the user's question. For broad or open-ended questions, provide thorough, multi-paragraph answers."
                     ),
                 },
                 {"role": "user", "content": request.message},
