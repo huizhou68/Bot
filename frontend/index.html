@@ -502,13 +502,25 @@
     font-size: 0.9rem;
     cursor: pointer;
     margin-top: 6px;
-    align-self: flex-end;
-    transition: color 0.2s ease;
+    float: right;                 /* ✅ right-align the button */
+    transition: color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
   }
 
   .copy-btn:hover {
     color: #0056b3;
+    opacity: 1;
     text-decoration: underline;
+  }
+
+  /* Optional: fade in on hover (like ChatGPT) */
+  .message.bot:hover .copy-btn {
+    opacity: 1;
+  }
+
+  /* the button is closer to the reply text*/
+  .message.bot {
+    padding-bottom: 4px;
   }
 
   </style>
@@ -767,30 +779,41 @@
     // Typing animation for bot messages
     function typeBotMessage(markdownText) {
       const chatbox = document.getElementById("chatbox");
-      const div = document.createElement("div");
-      div.classList.add("message", "bot");
-      chatbox.appendChild(div);
+
+      const messageDiv = document.createElement("div");
+      messageDiv.classList.add("message", "bot");
+      chatbox.appendChild(messageDiv);
 
       // Convert markdown to HTML
       const formattedHTML = marked.parse(markdownText);
 
-      // Use a temporary element to extract plain text without HTML tags for typing
+      // Extract plain text for typing animation
       const tempEl = document.createElement("div");
       tempEl.innerHTML = formattedHTML;
       const plainText = tempEl.textContent || tempEl.innerText || "";
 
       // Animate typing character by character
       let i = 0;
-      //const speed = 25; // milliseconds between characters
-      const speed = 1; // HZ's setting to make it faster
+      const speed = 1; // fast typing
       const typingInterval = setInterval(() => {
-        div.textContent = plainText.slice(0, i);
+        messageDiv.textContent = plainText.slice(0, i);
         chatbox.scrollTop = chatbox.scrollHeight;
         i++;
         if (i > plainText.length) {
           clearInterval(typingInterval);
           // Replace with formatted HTML once typing is done
-          div.innerHTML = formattedHTML;
+          messageDiv.innerHTML = formattedHTML;
+
+          // ✅ Add the copy button now
+          const copyBtn = document.createElement("button");
+          copyBtn.classList.add("copy-btn");
+          copyBtn.textContent = "📋 Copy";
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(plainText);
+            copyBtn.textContent = "✅ Copied!";
+            setTimeout(() => (copyBtn.textContent = "📋 Copy"), 1500);
+          };
+          messageDiv.appendChild(copyBtn);
         }
       }, speed);
     }
