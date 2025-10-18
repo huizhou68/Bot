@@ -779,41 +779,41 @@
     // Typing animation for bot messages
     function typeBotMessage(markdownText) {
       const chatbox = document.getElementById("chatbox");
-
       const messageDiv = document.createElement("div");
       messageDiv.classList.add("message", "bot");
       chatbox.appendChild(messageDiv);
 
       // Convert markdown to HTML
       const formattedHTML = marked.parse(markdownText);
-
-      // Extract plain text for typing animation
       const tempEl = document.createElement("div");
       tempEl.innerHTML = formattedHTML;
       const plainText = tempEl.textContent || tempEl.innerText || "";
 
-      // Animate typing character by character
+      // Typing animation
       let i = 0;
-      const speed = 1; // fast typing
+      const speed = 1;
       const typingInterval = setInterval(() => {
         messageDiv.textContent = plainText.slice(0, i);
         chatbox.scrollTop = chatbox.scrollHeight;
         i++;
         if (i > plainText.length) {
           clearInterval(typingInterval);
-          // Replace with formatted HTML once typing is done
+
+          // Replace with formatted HTML
           messageDiv.innerHTML = formattedHTML;
 
-          // ✅ Add the copy button now
-          const copyBtn = document.createElement("button");
-          copyBtn.classList.add("copy-btn");
-          copyBtn.textContent = "📋 Copy";
-          copyBtn.onclick = () => {
-            navigator.clipboard.writeText(plainText);
-            copyBtn.textContent = "✅ Copied!";
-            setTimeout(() => (copyBtn.textContent = "📋 Copy"), 1500);
-          };
-          messageDiv.appendChild(copyBtn);
+          // ✅ Wait one frame before adding the button (prevents overwrite)
+          setTimeout(() => {
+            const copyBtn = document.createElement("button");
+            copyBtn.classList.add("copy-btn");
+            copyBtn.textContent = "📋 Copy";
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(plainText);
+              copyBtn.textContent = "✅ Copied!";
+              setTimeout(() => (copyBtn.textContent = "📋 Copy"), 1500);
+            };
+            messageDiv.appendChild(copyBtn);
+          }, 0);
         }
       }, speed);
     }
