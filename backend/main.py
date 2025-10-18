@@ -37,6 +37,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 frontend_path = pathlib.Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
+
 @app.get("/")
 def serve_index():
     return FileResponse(frontend_path / "index.html")
@@ -51,6 +52,7 @@ class ChatRequest(BaseModel):
 class PasscodeRequest(BaseModel):
     passcode: str
 
+
 @app.post("/auth")
 def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.passcode == request.passcode).first()
@@ -59,7 +61,7 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
     
     user.last_login = datetime.utcnow()
     db.commit()
-    
+
     return {"message": "Authenticated"}
 
 
