@@ -156,10 +156,19 @@ def get_history(
 
 @app.post("/add_passcode")
 def add_passcode(passcode: str, db: Session = Depends(get_db)):
-    new_user = User(passcode=passcode)
-    db.add(new_user)
-    db.commit()
-    return {"message": f"Passcode '{passcode}' added successfully!"}
+    existing_user = db.query(User).filter(User.passcode == passcode).first()
+
+    if existing_user:
+        # ✅ Update last login for existing user
+        existing_user.last_login = datetime.utcnow()
+        db.commit()
+        return {"message": f"Passcode '{passcode}' already exists — last login updated."}
+    else:
+        # ✅ Create new user with current timestamp
+        new_user = User(passcode=passcode, last_login=datetime.utcnow())
+        db.add(new_user)
+        db.commit()
+        return {"message": f"Passcode '{passcode}' added successfully!"}
 
 
 @app.get("/list_passcodes")
