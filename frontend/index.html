@@ -1,3 +1,5 @@
+# Everything good!
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -570,12 +572,43 @@
     let totalMessages = 0;
     let loadingHistory = false;
 
-    window.onload = function() {
-      const savedPasscode = sessionStorage.getItem(passcodeKey);
-      if (savedPasscode) {
+    // ✅ Auto-login if a 14-character passcode is in the link
+    window.onload = async function() {
+      const query = window.location.search; // e.g. "?ABCDEFG1234567"
+      const potentialCode = query.startsWith("?") ? query.substring(1) : "";
+
+      if (potentialCode && potentialCode.length === 14) {
+        console.log("Detected passcode from URL:", potentialCode);
+
+        // Save the passcode in session
+        sessionStorage.setItem(passcodeKey, potentialCode);
+
+        // Attempt to record this passcode in the database (if new)
+        try {
+          await fetch("/add_passcode?passcode=" + potentialCode, { method: "POST" });
+        } catch (err) {
+          console.warn("Could not record passcode:", err);
+        }
+
+        // Show chat directly
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("chat-container").style.display = "flex";
-        fetchHistoryFromBackend(savedPasscode);
+
+        // Load chat history (if any)
+        fetchHistoryFromBackend(potentialCode);
+
+        // ✅ Optional: remove code from URL bar for privacy
+        window.history.replaceState({}, document.title, "/");
+      } else {
+        // No valid code in URL → normal behavior
+        const savedPasscode = sessionStorage.getItem(passcodeKey);
+        if (savedPasscode) {
+          document.getElementById("login-screen").style.display = "none";
+          document.getElementById("chat-container").style.display = "flex";
+          fetchHistoryFromBackend(savedPasscode);
+        } else {
+          document.getElementById("login-screen").style.display = "flex";
+        }
       }
     };
 
@@ -583,24 +616,16 @@
       const passcode = document.getElementById("passcode-input").value.trim();
       if (!passcode) return alert("Please enter your passcode");
 
-      const res = await fetch("/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode })
-      });
+      // Record the passcode if it doesn’t exist yet
+      await fetch("/add_passcode?passcode=" + passcode, { method: "POST" });
 
-      if (res.ok) {
-        sessionStorage.setItem(passcodeKey, passcode);
-        sessionStorage.removeItem(historyKey);
+      sessionStorage.setItem(passcodeKey, passcode);
+      sessionStorage.removeItem(historyKey);
 
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("chat-container").style.display = "flex";
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("chat-container").style.display = "flex";
 
-        fetchHistoryFromBackend(passcode);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert(err.detail || "Invalid passcode. Try again.");
-      }
+      fetchHistoryFromBackend(passcode);
     }
 
     async function sendMessage() {
@@ -627,13 +652,11 @@
           body: JSON.stringify({ passcode, message: msg })
         });
 
-        // ✅ Check for response format
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
         indicator.remove();
 
-        // ✅ Defensive: check that data.reply exists
         if (data && data.reply) {
           typeBotMessage(data.reply || data.response);
         } else {
@@ -653,16 +676,12 @@
       const messageDiv = document.createElement("div");
       messageDiv.classList.add("message", sender);
 
-      // Convert Markdown to HTML
       const formatted = marked.parse(text);
-
-      // Create message content element
       const messageText = document.createElement("div");
       messageText.classList.add("message-text");
       messageText.innerHTML = formatted;
       messageDiv.appendChild(messageText);
 
-      // 👇 Add copy button for bot messages only
       if (sender === "bot") {
         const copyBtn = document.createElement("button");
         copyBtn.classList.add("copy-btn");
@@ -678,7 +697,6 @@
       chatbox.appendChild(messageDiv);
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      // Save message to session storage
       saveMessage({ text, sender });
     }
 
@@ -688,28 +706,16 @@
       sessionStorage.setItem(historyKey, JSON.stringify(history));
     }
 
-    function loadMessages() {
-      const history = JSON.parse(sessionStorage.getItem(historyKey)) || [];
-      for (const msg of history) {
-        const div = document.createElement("div");
-        div.classList.add("message", msg.sender);
-        div.innerHTML = marked.parse(msg.text);
-        document.getElementById("chatbox").appendChild(div);
-      }
-      const chatbox = document.getElementById("chatbox");
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
     async function fetchHistoryFromBackend(passcode, append = false) {
       if (loadingHistory) return;
       loadingHistory = true;
 
       try {
         const res = await fetch(`${apiBase}/history?offset=${historyOffset}&limit=${historyLimit}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode })
-      });
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passcode })
+        });
 
         if (!res.ok) {
           console.error("Failed to load history:", res.status);
@@ -723,24 +729,18 @@
 
         const chatbox = document.getElementById("chatbox");
 
-        // If we're loading older history, prepend it
         if (append) {
           const oldScroll = chatbox.scrollHeight;
           const firstMsg = chatbox.firstChild;
-
           for (const msg of messages) {
             const div = document.createElement("div");
             div.classList.add("message", msg.sender);
             div.innerHTML = marked.parse(msg.text);
             chatbox.insertBefore(div, firstMsg);
           }
-
-          // Maintain scroll position after prepending
           const newScroll = chatbox.scrollHeight - oldScroll;
           chatbox.scrollTop = newScroll;
-
         } else {
-          // Initial load — newest messages only
           chatbox.innerHTML = "";
           for (const msg of messages) {
             const div = document.createElement("div");
@@ -751,17 +751,14 @@
           chatbox.scrollTop = chatbox.scrollHeight;
         }
 
-          // Update offset for next load
-          historyOffset += messages.length;
-          loadingHistory = false;
-
-        } catch (err) {
-          console.error("Error loading chat history:", err);
-          loadingHistory = false;
-        }
+        historyOffset += messages.length;
+        loadingHistory = false;
+      } catch (err) {
+        console.error("Error loading chat history:", err);
+        loadingHistory = false;
       }
+    }
 
-    // NEW: Typing indicator
     function showTypingIndicator() {
       const chatbox = document.getElementById("chatbox");
       const div = document.createElement("div");
@@ -776,20 +773,17 @@
       return div;
     }
 
-    // Typing animation for bot messages
     function typeBotMessage(markdownText) {
       const chatbox = document.getElementById("chatbox");
       const messageDiv = document.createElement("div");
       messageDiv.classList.add("message", "bot");
       chatbox.appendChild(messageDiv);
 
-      // Convert markdown to HTML
       const formattedHTML = marked.parse(markdownText);
       const tempEl = document.createElement("div");
       tempEl.innerHTML = formattedHTML;
       const plainText = tempEl.textContent || tempEl.innerText || "";
 
-      // Typing animation
       let i = 0;
       const speed = 1;
       const typingInterval = setInterval(() => {
@@ -798,11 +792,8 @@
         i++;
         if (i > plainText.length) {
           clearInterval(typingInterval);
-
-          // Replace with formatted HTML
           messageDiv.innerHTML = formattedHTML;
 
-          // ✅ Wait one frame before adding the button (prevents overwrite)
           setTimeout(() => {
             const copyBtn = document.createElement("button");
             copyBtn.classList.add("copy-btn");
@@ -827,13 +818,10 @@
     document.getElementById("chatbox").addEventListener("scroll", async function() {
       const chatbox = this;
       const passcode = sessionStorage.getItem(passcodeKey);
-
-      // If near top and more history exists, load more
       if (chatbox.scrollTop < 50 && historyOffset < totalMessages) {
         await fetchHistoryFromBackend(passcode, true);
       }
     });
-
   </script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
