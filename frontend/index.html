@@ -169,9 +169,31 @@
 
     /* --- Mobile layout --- */
     @media (max-width: 768px) {
-      #chatbox,
-      #input-area {
-        width: 90%;
+
+      /* 聊天区域宽度占满手机屏幕 */
+      .message {
+        width: 90% !important;    /* 不要固定 50% */
+        font-size: 1rem;          /* 让字大一点 */
+      }
+
+      #message-input {
+        width: 90% !important;    /* 输入框撑开空间 */
+        font-size: 1rem;
+      }
+
+      #chatbox {
+        padding: 100px 10px 120px 10px; /* 更紧凑 */
+      }
+
+      #chat-container {
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0;
+        border-radius: 0;
+      }
+
+      #chat-header {
+        padding: 10px 14px;
       }
 
       #chat-title {
@@ -179,11 +201,11 @@
       }
 
       #chat-logo {
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
       }
     }
-
+    
     /* Typing dots */
     .typing {
       display: inline-block;
@@ -550,7 +572,7 @@
     color: #f0f0f0;
     text-decoration: none;
   }
-  
+
   </style>
 </head>
 <body>
