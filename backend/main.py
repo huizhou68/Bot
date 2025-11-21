@@ -41,6 +41,20 @@ app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 def serve_index():
     return FileResponse(frontend_path / "index.html")
 
+@app.get("/imprint.html")
+def serve_imprint():
+    return FileResponse(frontend_path / "imprint.html")
+
+
+@app.get("/disclaimer.html")
+def serve_disclaimer():
+    return FileResponse(frontend_path / "disclaimer.html")
+
+
+@app.get("/privacy.html")
+def serve_privacy():
+    return FileResponse(frontend_path / "privacy.html")
+
 class AuthRequest(BaseModel):
     passcode: str
 

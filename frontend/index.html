@@ -1,4 +1,5 @@
 # Everything good!
+# 20251121
 
 <!DOCTYPE html>
 <html lang="en">
@@ -525,16 +526,54 @@
     padding-bottom: 1px;
   }
 
+  /* 🔹 Legal links on the login page (top-right) */
+  #legal-links {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    z-index: 999;
+    font-size: 0.95rem;
+  }
+
+  #legal-links a {
+    color: white;
+    text-decoration: underline;
+    margin: 0 6px;
+    font-weight: 500;
+  }
+
+  #legal-links span {
+    color: white;
+  }
+
+  #legal-links a:hover {
+    color: #f0f0f0;
+    text-decoration: none;
+  }
+  
   </style>
 </head>
 <body>
+
   <div id="login-screen">
+
+    <!-- 🔹 Top-right legal links (login page only) -->
+    <div id="legal-links">
+      <a href="/imprint.html" target="_blank">Imprint</a>
+      <span>|</span>
+      <a href="/disclaimer.html" target="_blank">Disclaimer</a>
+      <span>|</span>
+      <a href="/privacy.html" target="_blank">Privacy Policy</a>
+    </div>
+
     <h1 id="brand">
       FuBot
       <img id="brand-logo" src="/static/logo2.png" alt="FuBot logo" />
     </h1>
+
     <p id="tagline">Made in Germany</p>
-    <h2>Please enter your passcode to chat with me!</h2>
+
+    <h2>Please enter your passcode to start a chat!</h2>
     <input id="passcode-input" placeholder="Passcode" />
     <button onclick="login()">Enter</button>
   </div>
