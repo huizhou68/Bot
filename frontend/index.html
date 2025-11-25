@@ -620,7 +620,86 @@
     height: auto;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
   }
-  
+
+  /* 横向排列输入框和按钮 */
+  #passcode-row {
+    display: flex;
+    justify-content: center;     /* 居中排布 */
+    align-items: center;
+    gap: 10px;                    /* 输入框与按钮间距 */
+    margin-top: 10px;
+  }
+
+  /* 输入框 */
+  #passcode-input {
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.2);
+    color: white;
+    width: 200px;                 /* 可调宽度 */
+  }
+
+  /* 输入框 placeholder */
+  #passcode-input::placeholder {
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* 按钮 */
+  #passcode-btn {
+    padding: 10px 16px;
+    font-size: 1.1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  #passcode-btn:hover {
+    background: #005fcc;
+  }
+
+  #brand-top {
+    position: absolute;
+    top: 20px;              /* 贴近顶部 */
+    left: 20px;             /* 从左边开始 */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    color: white;
+    font-size: 1.4rem;      /* 字更大 */
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  #brand-logo {
+    width: 46px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+
+  #legal-bottom {
+    position: absolute;
+    bottom: 20px;           /* 位于底部 */
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 1rem;
+  }
+
+  #legal-bottom a {
+    color: white;
+    text-decoration: none;  /* 去掉下划线 */
+    font-weight: 500;
+  }
+
+  #legal-bottom span {
+    margin: 0 6px;
+  }
+
   </style>
 </head>
 <body>
@@ -628,7 +707,7 @@
   <div id="login-screen">
 
     <!-- 🔹 Top-right legal links (login page only) -->
-    <div id="legal-links">
+    <div id="legal-bottom">
       <a href="/imprint.html" target="_blank">Imprint</a>
       <span>|</span>
       <a href="/disclaimer.html" target="_blank">Disclaimer</a>
@@ -636,16 +715,16 @@
       <a href="/privacy.html" target="_blank">Privacy Policy</a>
     </div>
 
-    <div id="brand-row">
+    <div id="brand-top">
       <img id="brand-logo" src="/static/logo2.png" alt="FuBot logo" />
-      <span class="brand-main">
-        FuBot <span class="brand-sub">(For-you Bot)</span> | A Private Chatting Tool Made by Scholars in Germany
-      </span>
+        <span>FuBot (For-you Bot) | A Private Chatting Tool Made by Scholars in Germany</span>
     </div>
 
     <h2>Please enter your passcode to start a chat!</h2>
-    <input id="passcode-input" placeholder="Passcode" />
-    <button onclick="login()">Enter</button>
+    <div id="passcode-row">
+      <input id="passcode-input" placeholder="Passcode" />
+      <button id="passcode-btn" onclick="login()">Enter</button>
+    </div>
 
     <div id="login-footer-warning">
       <p>⚠️ Responses from chatbots may contain errors.</p>
