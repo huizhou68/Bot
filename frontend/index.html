@@ -669,6 +669,54 @@
     cursor: pointer;
   }
 
+  /* 确保输入框和按钮在同一行，垂直居中 */
+  #passcode-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;      /* 垂直对齐关键 */
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  /* 统一高度、内外边距、盒模型 */
+  #passcode-input,
+  #passcode-btn {
+    height: 42px;             /* 完全一样高 */
+    padding: 0 14px;          /* 像素级别控制内边距 */
+    font-size: 1rem;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin: 0;                /* 覆盖之前的 margin-bottom */
+  }
+
+  /* 专门给输入框的样式（可按你原来风格来） */
+  #passcode-input {
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.2);
+    color: white;
+    width: 200px;
+  }
+
+  /* placeholder 颜色 */
+  #passcode-input::placeholder {
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* 按钮样式 */
+  #passcode-btn {
+    border: none;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;      /* 让文字在按钮里也垂直居中 */
+    align-items: center;
+    justify-content: center;
+  }
+
+  #passcode-btn:hover {
+    background: #005fcc;
+  }
+  
   </style>
 </head>
 <body>
@@ -689,9 +737,9 @@
     </div>
 
     <h2>Please enter your passcode to start a chat!</h2>
-    <div id="login-input-row">
+    <div id="passcode-row">
       <input id="passcode-input" placeholder="Passcode" />
-      <button id="login-button" onclick="login()">Enter</button>
+      <button id="passcode-btn" onclick="login()">Enter</button>
     </div>
 
     <div id="login-footer-warning">
