@@ -588,6 +588,39 @@
     margin: 3px 0;
     text-shadow: 0 1px 3px rgba(0,0,0,0.4);
   }
+
+  /* Horizontal brand line (top-left aligned) */
+  #brand-row {
+    position: absolute;
+    top: 80px;              /* 调整与你的 legal links 位置保持美观 */
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 600;
+    width: calc(100% - 40px);
+  }
+
+  /* Main brand text */
+  .brand-main {
+    white-space: nowrap;     /* 防止换行 */
+  }
+
+  /* Sub text inside brand */
+  .brand-sub {
+    font-weight: 400;
+    opacity: 0.9;
+  }
+
+  /* Logo next to brand text */
+  #brand-logo {
+    width: 42px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+  
   </style>
 </head>
 <body>
@@ -603,12 +636,12 @@
       <a href="/privacy.html" target="_blank">Privacy Policy</a>
     </div>
 
-    <h1 id="brand">
-      FuBot
+    <div id="brand-row">
       <img id="brand-logo" src="/static/logo2.png" alt="FuBot logo" />
-    </h1>
-
-    <p>FuBot (for-you bot) is a private chatting tool made by scholars in Germany</p>
+      <span class="brand-main">
+        FuBot <span class="brand-sub">(For-you Bot)</span> | A Private Chatting Tool Made by Scholars in Germany
+      </span>
+    </div>
 
     <h2>Please enter your passcode to start a chat!</h2>
     <input id="passcode-input" placeholder="Passcode" />
