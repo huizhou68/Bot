@@ -509,16 +509,6 @@
     line-height: 1.5;
   }
 
-  /* Inline logo next to FuBot title */
-  #brand-logo {
-    width: 50px;              /* adjust size */
-    height: auto;
-    margin-left: 8px;        /* space between text and logo */
-    position: relative;
-    top: 5px;                  /* ✅ nudges image upward for perfect alignment */
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-  }
-
   /* formatting of the copy button */
   .copy-btn {
     background: transparent;
@@ -614,51 +604,9 @@
     opacity: 0.9;
   }
 
-  /* Logo next to brand text */
-  #brand-logo {
-    width: 42px;
-    height: auto;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-  }
-
-  /* 横向排列输入框和按钮 */
-  #passcode-row {
-    display: flex;
-    justify-content: center;     /* 居中排布 */
-    align-items: center;
-    gap: 10px;                    /* 输入框与按钮间距 */
-    margin-top: 10px;
-  }
-
-  /* 输入框 */
-  #passcode-input {
-    padding: 10px;
-    font-size: 1.1rem;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.5);
-    background: rgba(255,255,255,0.2);
-    color: white;
-    width: 200px;                 /* 可调宽度 */
-  }
-
   /* 输入框 placeholder */
   #passcode-input::placeholder {
     color: rgba(255,255,255,0.8);
-  }
-
-  /* 按钮 */
-  #passcode-btn {
-    padding: 10px 16px;
-    font-size: 1.1rem;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  #passcode-btn:hover {
-    background: #005fcc;
   }
 
   #brand-top {
@@ -673,12 +621,6 @@
     font-size: 1.8rem;      /* 字更大 */
     font-weight: 600;
     white-space: nowrap;
-  }
-
-  #brand-logo {
-    width: 46px;
-    height: auto;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
   }
 
   #legal-bottom {
@@ -698,6 +640,33 @@
 
   #legal-bottom span {
     margin: 0 6px;
+  }
+
+  #login-input-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;   /* 垂直居中对齐 */
+    gap: 10px;             /* 输入框与按钮之间的间距 */
+    margin-top: 15px;
+  }
+
+  #passcode-input {
+    height: 40px;
+    padding: 0 10px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  #login-button {
+    height: 40px;    /* 与输入框一致 */
+    padding: 0 18px; /* 按钮宽度 */
+    font-size: 1rem;
+    border-radius: 6px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
   }
 
   </style>
@@ -720,9 +689,9 @@
     </div>
 
     <h2>Please enter your passcode to start a chat!</h2>
-    <div id="passcode-row">
+    <div id="login-input-row">
       <input id="passcode-input" placeholder="Passcode" />
-      <button id="passcode-btn" onclick="login()">Enter</button>
+      <button id="login-button" onclick="login()">Enter</button>
     </div>
 
     <div id="login-footer-warning">
