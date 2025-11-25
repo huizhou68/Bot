@@ -573,6 +573,21 @@
     text-decoration: none !important;
   }
 
+  #login-footer-warning {
+    position: absolute;
+    bottom: 20px;
+    text-align: center;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 0 20px;
+  }
+
+  #login-footer-warning p {
+    margin: 3px 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
   </style>
 </head>
 <body>
@@ -593,11 +608,16 @@
       <img id="brand-logo" src="/static/logo2.png" alt="FuBot logo" />
     </h1>
 
-    <p id="tagline">Made in Germany</p>
+    <p id="tagline">FuBot---for-you bot---is a private chatting tool made by scholars in Germany</p>
 
     <h2>Please enter your passcode to start a chat!</h2>
     <input id="passcode-input" placeholder="Passcode" />
     <button onclick="login()">Enter</button>
+
+    <div id="login-footer-warning">
+      <p>⚠️ Responses from chatbots may contain errors.</p>
+      <p>🔒 Please do not share your personal data with FuBot.</p>
+    </div>
   </div>
 
   <div id="chat-container" style="display:none;">
