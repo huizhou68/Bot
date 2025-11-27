@@ -1,6 +1,6 @@
-# FuBot 🤖
+# EzBot 🤖
 
-FuBot is a FastAPI-powered AI assistant for customer service.
+EzBot is a FastAPI-powered AI assistant for customer service.
 It uses OpenAI's GPT models to answer user queries, with PostgreSQL for storing chat history.
 
 ## Features
