@@ -82,7 +82,7 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5.1",
             temperature=0.7,
             max_completion_tokens=2000, # ✅ allow longer replies
             presence_penalty=0.2,      # ✅ encourage diversity in ideas
