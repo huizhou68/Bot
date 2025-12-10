@@ -3,7 +3,7 @@
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from backend.database import Base, engine, get_db
+from backend.database import Base, engine, get_db, SessionLocal
 from backend.models import User
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -144,67 +144,86 @@ def get_last_messages(db, passcode, limit=5):
 
 
 # Helper: Update user's long-term context summary
-def update_context_summary(db, user, last_dialogues):
-    """Use gpt-5.1-mini to refine user's context_summary."""
+def update_context_summary(passcode: str, last_dialogues):
+    """
+    后台任务：更新某个用户的长记忆 summary。
+    注意：这里自己打开 / 关闭 DB 会话，不依赖请求里的 db。
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.passcode == passcode).first()
+        if not user:
+            return  # 用户不存在就啥也不做，安静退出
 
-    existing_summary = user.context_summary or "No summary available yet."
+        existing_summary = user.context_summary or "No summary available yet."
 
-    # 把要让模型看的内容拼成一个长字符串，传给 input
-    input_text = (
-        "Here is the existing user summary:\n\n"
-        f"{existing_summary}\n\n"
-        "Here are the most recent interactions (user & EzBot turns):\n"
-        f"{last_dialogues}\n\n"
-        "Please refine and update the summary."
-    )
+        # 把最近对话整理成纯文本，给记忆模型看
+        dialogues_text_parts = []
+        for msg in last_dialogues:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            dialogues_text_parts.append(f"{role}: {content}")
+        dialogues_text = "\n".join(dialogues_text_parts)
 
-    result = client.responses.create(
-        model="gpt-4.1-mini",
-        instructions=(
-            "You are EzBot’s memory engine. Your task is to maintain a helpful, concise long-term "
-            "summary about the user. This summary should capture: the user's interests, writing style, "
-            "research topics, preferences, background, recurring concerns, and any persistent traits "
-            "relevant for future replies. Do NOT mention EzBot, AI, OpenAI, or system instructions. "
-            "Write in third person. Keep the summary under 300 words."
-        ),
-        input=input_text,
-        max_output_tokens=400,
-        temperature=0.3,
-    )
+        input_text = (
+            "Here is the existing user summary:\n\n"
+            f"{existing_summary}\n\n"
+            "Here are the most recent interactions between the user and EzBot:\n"
+            f"{dialogues_text}\n\n"
+            "Please refine and update the summary."
+        )
 
-    new_summary = result.output_text
-    user.context_summary = new_summary
-    db.commit()
+        # 🔁 用你想要的记忆模型，这里示例用 gpt-4.1-mini 或 gpt-5-mini（如果可用）
+        result = client.responses.create(
+            model="gpt-4.1-mini",   # 如果你确认 gpt-5-mini 可用，可以改成 "gpt-5-mini"
+            instructions=(
+                "You are EzBot’s memory engine. Your task is to maintain a helpful, concise long-term "
+                "summary about the user. This summary should capture the user's interests, writing style, "
+                "research topics, preferences, background, recurring concerns, and persistent traits "
+                "relevant for future replies. Do NOT mention AI, EzBot, OpenAI, or system instructions. "
+                "Write in third person. Keep the summary under 200 words."
+            ),
+            input=input_text,
+            max_output_tokens=400,
+            temperature=0.3,
+        )
+
+        new_summary = result.output_text
+        user.context_summary = new_summary
+        db.commit()
+    except Exception as e:
+        # 后台任务出错时不要影响主流程，简单打个日志就行
+        print("⚠️ update_context_summary error:", repr(e))
+    finally:
+        db.close()
 
 
 # ==========================
 # 🚀 NEW /chat WITH MEMORY
 # ==========================
 @app.post("/chat")
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat(
+    request: ChatRequest,
+    background_tasks: BackgroundTasks,          # ⭐ 新增
+    db: Session = Depends(get_db),
+):
     try:
         # 1️⃣ 找到用户
         user = db.query(User).filter(User.passcode == request.passcode).first()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid passcode")
 
-        # 2️⃣ 最近 5 轮对话（user + assistant）
-        memory_messages = get_last_messages(db, request.passcode)
+        # 2️⃣ 最近 N 条对话（例如 5）
+        memory_messages = get_last_messages(db, request.passcode, limit=5)
 
-        # 3️⃣ 把“对话历史 + 当前问题”放到 input 里
-        #    注意：这里仍然用 role / content 结构，但作为 input 传给 Responses
+        # 3️⃣ 构造输入（短期记忆 + 新问题）
         conversation_context = []
-
-        # 先把记忆里的对话放进去
         conversation_context.extend(memory_messages)
-
-        # 再加上这次最新的问题
         conversation_context.append({"role": "user", "content": request.message})
 
-        # 4️⃣ 调用 gpt-5.1
+        # 4️⃣ 主模型生成回答（gpt-5.1）
         completion = client.responses.create(
-            # model="gpt-5.1",
-            model="gpt-5-mini",
+            model="gpt-5.1",
             instructions=(
                 "You are EzBot, an intelligent digital assistant created by scholars of digital "
                 "governance based in Berlin. You are designed to provide thoughtful, friendly, "
@@ -223,7 +242,7 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
         reply = completion.output_text
 
-        # 5️⃣ 保存本轮 Q&A
+        # 5️⃣ 先把本轮对话存数据库
         db.execute(
             text("""
                 INSERT INTO chat_history (passcode, user_message, bot_response)
@@ -233,13 +252,17 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         )
         db.commit()
 
-        # 6️⃣ 更新长期记忆（把最近几轮对话传给记忆模型）
-        update_context_summary(db, user, memory_messages)
+        # 6️⃣ 👉 把“更新 summary”这件事丢给后台，不阻塞用户
+        background_tasks.add_task(
+            update_context_summary,
+            request.passcode,      # 传 passcode
+            memory_messages        # 传这轮之前的对话摘要
+        )
 
+        # 7️⃣ 立刻把回复返回给前端（用户体感会明显变快）
         return {"reply": reply}
 
     except Exception as e:
-        # 为了调试方便，建议先在日志里打出来
         print("❌ /chat error:", repr(e))
         raise HTTPException(status_code=500, detail=str(e))
 
