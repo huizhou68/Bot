@@ -820,11 +820,25 @@
 
     async function login() {
       const passcode = document.getElementById("passcode-input").value.trim();
-      if (!passcode) return alert("Please enter your passcode");
+      if (!passcode) {
+        alert("Please enter your passcode");
+        return;
+      }
 
-      // Record the passcode if it doesn’t exist yet
-      await fetch("/add_passcode?passcode=" + passcode, { method: "POST" });
+      // ✅ 这里不再自动 /add_passcode，而是先调用 /auth 做校验
+      const res = await fetch("/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode })
+      });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || "Invalid passcode. Try again.");
+        return;
+      }
+
+      // ✅ 只有通过 /auth 校验才认为登录成功
       sessionStorage.setItem(passcodeKey, passcode);
       sessionStorage.removeItem(historyKey);
 
