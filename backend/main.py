@@ -203,7 +203,8 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
         # 4️⃣ 调用 gpt-5.1
         completion = client.responses.create(
-            model="gpt-5.1",
+            # model="gpt-5.1",
+            model="gpt-5-mini",
             instructions=(
                 "You are EzBot, an intelligent digital assistant created by scholars of digital "
                 "governance based in Berlin. You are designed to provide thoughtful, friendly, "
