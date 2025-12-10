@@ -159,7 +159,7 @@ def update_context_summary(db, user, last_dialogues):
     )
 
     result = client.responses.create(
-        model="gpt-5.1-mini",
+        model="gpt-5.1",
         instructions=(
             "You are EzBot’s memory engine. Your task is to maintain a helpful, concise long-term "
             "summary about the user. This summary should capture: the user's interests, writing style, "
