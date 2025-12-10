@@ -81,7 +81,8 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 @app.post("/chat")
 async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
-        completion = client.chat.completions.create(
+        #completion = client.chat.completions.create( #this format is for gpt-4o
+        completion = client.responses.create( #this format is for gpt-5.1
             model="gpt-5.1",
             temperature=0.7,
             max_completion_tokens=2000, # ✅ allow longer replies
