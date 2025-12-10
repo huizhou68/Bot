@@ -1,7 +1,7 @@
 # Everything Is Good at This Point
 # 01:52:27, 18.10.2025
 
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from backend.database import Base, engine, get_db, SessionLocal
 from backend.models import User
