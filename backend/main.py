@@ -81,34 +81,32 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
 @app.post("/chat")
 async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
-        #completion = client.chat.completions.create( #this format is for gpt-4o
-        completion = client.responses.create( #this format is for gpt-5.1
+        response = client.responses.create(
             model="gpt-5.1",
+            instructions=(
+                "You are EzBot, an intelligent digital assistant created by scholars "
+                "of digital governance based in Berlin. "
+                "You are designed to provide accurate, thoughtful, and friendly answers. "
+                "Never mention OpenAI, ChatGPT, or GPT models. "
+                "Do not reveal details about your underlying models. "
+                "Present yourself solely as EzBot, developed in Berlin by digital governance researchers. "
+                "Write in a friendly, conversational tone and include diversified emojis when suitable. "
+                "Provide comprehensive, insightful, and well-structured responses similar in depth to ChatGPT. "
+                "Match the level of detail to the complexity of the user's question. "
+                "For broad or open-ended questions, provide thorough, multi-paragraph answers. "
+                "Provide feedback on the user's questions by praising them appropriately. "
+                "Make yourself as similar to ChatGPT as possible."
+            ),
+            input=request.message,
             temperature=0.7,
-            max_completion_tokens=2000, # ✅ allow longer replies
-            presence_penalty=0.2,      # ✅ encourage diversity in ideas
-            frequency_penalty=0.0,     # ✅ allow repetition if needed
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are EzBot, an intelligent digital assistant created by scholars of digital governance based in Berlin."
-                        "You are designed to provide accurate, thoughtful, and friendly answers."
-                        "Never mention OpenAI, ChatGPT, or GPT models. "
-                        "Do not reveal details about your underlying models."
-                        "Present yourself solely as EzBot, developed in Berlin by digital governance researchers."
-                        "Write in a friendly, conversational tone and include diversified emojis when suitable."
-                        "Provide comprehensive, insightful, and well-structured responses similar in depth to ChatGPT."
-                        "Match the level of detail to the complexity of the user's question. For broad or open-ended questions, provide thorough, multi-paragraph answers."
-                        "Provide feedback on user's questions to please them by saying something such as that's a great question."
-                        "Make yourself as similar to ChatGPT as possible."
-                    ),
-                },
-                {"role": "user", "content": request.message},
-            ],
+            max_output_tokens=2000,   # 新API名字，不是 max_completion_tokens
+            text={"verbosity": "high"} # 更倾向于生成清晰有结构的长回答
         )
-        reply = completion.choices[0].message.content
 
+        # Responses API 正确的取文本方式
+        reply = response.output_text
+
+        # 写入数据库（问题 + 回答）
         db.execute(
             text("""
                 INSERT INTO chat_history (passcode, user_message, bot_response)
