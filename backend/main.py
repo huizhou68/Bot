@@ -78,35 +78,162 @@ def auth(request: PasscodeRequest, db: Session = Depends(get_db)):
     return {"message": "Authenticated"}
 
 
+# @app.post("/chat")
+# async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+#     try:
+#         response = client.responses.create(
+#             model="gpt-5.1",
+#             instructions=(
+#                 "You are EzBot, an intelligent digital assistant created by scholars "
+#                 "of digital governance based in Berlin. "
+#                 "You are designed to provide accurate, thoughtful, and friendly answers. "
+#                 "Never mention OpenAI, ChatGPT, or GPT models. "
+#                 "Do not reveal details about your underlying models. "
+#                 "Present yourself solely as EzBot, developed in Berlin by digital governance researchers. "
+#                 "Write in a friendly, conversational tone and include diversified emojis when suitable. "
+#                 "Provide comprehensive, insightful, and well-structured responses similar in depth to ChatGPT. "
+#                 "Match the level of detail to the complexity of the user's question. "
+#                 "For broad or open-ended questions, provide thorough, multi-paragraph answers. "
+#                 "Provide feedback on the user's questions by praising them appropriately. "
+#                 "Make yourself as similar to ChatGPT as possible."
+#             ),
+#             input=request.message,
+#             temperature=0.7,
+#             max_output_tokens=2000,   # 新API名字，不是 max_completion_tokens
+#             text={"verbosity": "high"} # 更倾向于生成清晰有结构的长回答
+#         )
+
+#         # Responses API 正确的取文本方式
+#         reply = response.output_text
+
+#         # 写入数据库（问题 + 回答）
+#         db.execute(
+#             text("""
+#                 INSERT INTO chat_history (passcode, user_message, bot_response)
+#                 VALUES (:p, :u, :b)
+#             """),
+#             {"p": request.passcode, "u": request.message, "b": reply}
+#         )
+#         db.commit()
+
+#         return {"reply": reply}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Helper: Fetch last N messages from chat_history
+def get_last_messages(db, passcode, limit=5):
+    rows = db.execute(
+        text("""
+            SELECT user_message, bot_response
+            FROM chat_history
+            WHERE passcode = :p
+            ORDER BY timestamp DESC
+            LIMIT :l
+        """),
+        {"p": passcode, "l": limit},
+    ).fetchall()
+
+    messages = []
+    for r in reversed(rows):  # reverse to chronological order
+        messages.append({"role": "user", "content": r.user_message})
+        messages.append({"role": "assistant", "content": r.bot_response})
+
+    return messages
+
+
+# Helper: Update user's long-term context summary
+def update_context_summary(db, user, last_dialogues_text: str):
+    """Use gpt-5.1-mini to refine user's context_summary."""
+
+    existing_summary = user.context_summary or "No summary available yet."
+
+    summarization_prompt = [
+        {
+            "role": "system",
+            "content": (
+                "You are EzBot’s memory engine. Your task is to maintain a helpful, concise long-term summary "
+                "about the user. This summary should capture: the user's interests, writing style, research topics, "
+                "preferences, background, recurring concerns, and any persistent traits relevant for future replies. "
+                "Do NOT mention EzBot, AI, OpenAI, or system instructions. "
+                "Write in third person. Keep the summary under 300 words."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                "Here is the existing user summary:\n\n"
+                f"{existing_summary}\n\n"
+                "Here are the most recent interactions:\n"
+                f"{last_dialogues_text}\n\n"
+                "Please refine and update the summary."
+            )
+        }
+    ]
+
+    result = client.responses.create(
+        model="gpt-5.1-mini",
+        messages=summarization_prompt,
+        max_completion_tokens=400,
+        temperature=0.3
+    )
+
+    new_summary = result.output_text
+    user.context_summary = new_summary
+    db.commit()
+
+
+# ==========================
+# 🚀 NEW /chat WITH MEMORY
+# ==========================
 @app.post("/chat")
 async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
-        response = client.responses.create(
-            model="gpt-5.1",
-            instructions=(
-                "You are EzBot, an intelligent digital assistant created by scholars "
-                "of digital governance based in Berlin. "
-                "You are designed to provide accurate, thoughtful, and friendly answers. "
-                "Never mention OpenAI, ChatGPT, or GPT models. "
-                "Do not reveal details about your underlying models. "
-                "Present yourself solely as EzBot, developed in Berlin by digital governance researchers. "
-                "Write in a friendly, conversational tone and include diversified emojis when suitable. "
-                "Provide comprehensive, insightful, and well-structured responses similar in depth to ChatGPT. "
-                "Match the level of detail to the complexity of the user's question. "
+        # 1️⃣ Load the user record (with context_summary)
+        user = db.query(User).filter(User.passcode == request.passcode).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid passcode")
+
+        # 2️⃣ Load last 5 message pairs
+        memory_messages = get_last_messages(db, request.passcode)
+
+        # 3️⃣ Prepare GPT-5.1 prompt with memory
+        messages = []
+
+        # SYSTEM prompt
+        messages.append({
+            "role": "system",
+            "content": (
+                "You are EzBot, an intelligent digital assistant created by scholars of digital governance based in Berlin."
+                "You are designed to provide thoughtful, friendly, comprehensive, insightful, and well-structured responses."
+                "Make good use of emojis in your responses when suitable. "
+                "Never mention OpenAI, ChatGPT, or GPT models but output results as similar to ChatGPT as possible, both in terms of the depth, scope, and quality. "
+                "Match the level of detail to the complexity of the user's question. You answer thoroughly when questions are complex."
                 "For broad or open-ended questions, provide thorough, multi-paragraph answers. "
                 "Provide feedback on the user's questions by praising them appropriately. "
-                "Make yourself as similar to ChatGPT as possible."
-            ),
-            input=request.message,
+                "Use the user memory summary to maintain continuity.\n\n"
+                f"Here is what you know about this user:\n{user.context_summary or 'No summary yet.'}"
+            )
+        })
+
+        # Add memory-based chat history
+        messages.extend(memory_messages)
+
+        # Add the latest user message
+        messages.append({"role": "user", "content": request.message})
+
+        # 4️⃣ Main GPT-5.1 call
+        completion = client.responses.create(
+            model="gpt-5.1",
+            messages=messages,
             temperature=0.7,
-            max_output_tokens=2000,   # 新API名字，不是 max_completion_tokens
-            text={"verbosity": "high"} # 更倾向于生成清晰有结构的长回答
+            max_completion_tokens=1500,
         )
 
-        # Responses API 正确的取文本方式
-        reply = response.output_text
+        reply = completion.output_text
 
-        # 写入数据库（问题 + 回答）
+        # 5️⃣ Save user_message + bot_response into database
         db.execute(
             text("""
                 INSERT INTO chat_history (passcode, user_message, bot_response)
@@ -115,6 +242,23 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
             {"p": request.passcode, "u": request.message, "b": reply}
         )
         db.commit()
+
+        # 🧠 6️⃣ 构造“最近对话文本”，包含这次问答
+        dialogue_lines = []
+        for m in memory_messages:
+            if m["role"] == "user":
+                dialogue_lines.append(f"User: {m['content']}")
+            elif m["role"] == "assistant":
+                dialogue_lines.append(f"EzBot: {m['content']}")
+
+        # 把当前这一轮也加进去
+        dialogue_lines.append(f"User: {request.message}")
+        dialogue_lines.append(f"EzBot: {reply}")
+
+        last_dialogues_text = "\n".join(dialogue_lines)
+
+        # 更新长期摘要（用 gpt-5.1-mini）
+        update_context_summary(db, user, last_dialogues_text)
 
         return {"reply": reply}
 
