@@ -3,6 +3,7 @@ import pathlib
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 import pandas as pd
+from pandas.api.types import DatetimeTZDtype
 
 # 1. 明确 .env 的路径：和这个脚本同一目录
 BASE_DIR = pathlib.Path(__file__).resolve().parent
@@ -45,9 +46,10 @@ df_history = pd.read_sql(history_query, engine)
 # 🔧 6. 处理带时区的 datetime 列（Excel 不支持 tz-aware datetime）
 for df_name, df in [("users", df_users), ("chat_history", df_history)]:
     for col in df.columns:
-        if pd.api.types.is_datetime64tz_dtype(df[col]):
+        dtype = df[col].dtype
+        if isinstance(dtype, DatetimeTZDtype):
             print(f"⏱ Converting timezone-aware column '{col}' in '{df_name}' to naive datetime...")
-            df[col] = df[col].dt.tz_localize(None)   # 去掉时区信息，保留时间值（通常是 UTC）
+            df[col] = df[col].dt.tz_localize(None)
 
 # 7. 写入同一个 Excel 文件，不同 sheet
 output_file = BASE_DIR / "../bot_data.xlsx"
