@@ -171,9 +171,23 @@
     @media (max-width: 768px) {
 
       #brand-top { font-size: 1.7rem; }
-      #login-screen h2 { font-size: 1.3rem; }
-      #login-footer-warning, #login-footer-warning p { font-size: 1rem; }
       
+      /* 1️⃣ 登录提示文字 */
+      #login-screen h2 {
+        font-size: 1.4rem;
+        line-height: 1.4;
+      }
+
+      /* 2️⃣ 底部 warning 文本 */
+      #login-footer-warning {
+        font-size: 1.05rem;
+      }
+
+      #login-footer-warning p {
+        font-size: 1.05rem;
+        line-height: 1.45;
+      }
+
       /* 聊天区域宽度占满手机屏幕 */
       .message {
         width: 90% !important;    /* 不要固定 50% */
@@ -343,14 +357,7 @@
     #login-screen button:hover {
       background: rgba(255,255,255,0.5);
     }
-
-    /* Responsive adjustments for smaller screens */
-    @media (max-width: 768px) {
-      #login-screen {
-        background-attachment: scroll;
-        backdrop-filter: blur(4px);
-      }
-    }
+    
 
 
   /* Smooth fade-in animation for bot messages */
@@ -757,7 +764,7 @@
     </div>
 
     <div id="brand-top">
-        <span>EzBot | A Private Chatting Tool Made by Scholars in Berlin</span>
+        <span>EzBot | A Chatting Tool Made by Scholars in Berlin</span>
     </div>
 
     <h2>Please enter your passcode to start a chat!</h2>
