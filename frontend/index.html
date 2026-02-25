@@ -757,6 +757,83 @@
   #login-footer-warning p {
     font-size: 1.1rem;  /* 确保 p 不被别的样式压回去 */
   }
+
+
+  /* ===== Sample Questions ===== */
+  #sample-questions {
+    width: 50%;
+    margin: 10px auto 18px auto;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f7f7f8;
+    color: #1a1a1a;
+  }
+
+  #sample-questions .sq-title h2 {
+    margin: 0 0 6px 0;
+    font-size: 1.25rem;
+  }
+
+  #sample-questions .sq-title p {
+    margin: 0 0 10px 0;
+    font-size: 0.98rem;
+    opacity: 0.9;
+  }
+
+  #sq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sq-block {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e9e9ee;
+  }
+
+  .sq-block .sq-category {
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+  }
+
+  .sq-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  .sq-text {
+    flex: 1;
+    font-size: 0.98rem;
+    line-height: 1.35;
+    padding-right: 10px;
+  }
+
+  .sq-copy {
+    border: 1px solid #d6d6de;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .sq-copy:hover {
+    background: #f1f1f4;
+  }
+
+  /* Mobile: make it full-width */
+  @media (max-width: 768px) {
+    #sample-questions { width: 92% !important; }
+    #sample-questions .sq-title h2 { font-size: 1.15rem; }
+    .sq-text { font-size: 1rem; }
+  }
+
   </style>
 </head>
 <body>
@@ -796,8 +873,24 @@
       <span id="chat-title"><strong>EzBot</strong> | AI Assistant Truly for You</span>
     </header>
 
+
+
+
     <!-- Centered chat section -->
     <div id="chat-main">
+
+      <div id="sample-questions" style="display:none;">
+        <div class="sq-title">
+          <h2>Welcome to EzBot!</h2>
+          <p>
+            I am a helpful digital assistant capable of answering questions in many domains.
+            Below are some example questions you might ask me. Happy chatting!
+          </p>
+        </div>
+
+        <div id="sq-container"></div>
+      </div>
+
       <div id="chatbox"></div>
 
       <div id="input-area">
@@ -1085,6 +1178,165 @@
         await fetchHistoryFromBackend(passcode, true);
       }
     });
+
+
+    /***********************
+     * Sample Questions: Click-to-Ask
+     * - Randomize categories
+     * - Randomize examples within each category
+     * - Click fills input + sends immediately
+     * - Show every login
+     ************************/
+
+    // 1) 数据（五类，每类两问）
+    const SAMPLE_QUESTIONS = [
+      {
+        category: "Technology",
+        examples: [
+          "What might the Fourth Industrial Revolution look like?",
+          "How can you integrate AI into your everyday study or work routines?"
+        ]
+      },
+      {
+        category: "Politics",
+        examples: [
+          "When making policies, how can governments better listen to the needs of different groups?",
+          "How should a personal income tax system be designed to be fairer?"
+        ]
+      },
+      {
+        category: "Health",
+        examples: [
+          "Do you have any tips for boosting energy?",
+          "Which lifestyle factors have the biggest impact on human lifespan?"
+        ]
+      },
+      {
+        category: "Sports",
+        examples: [
+          "How can you turn exercise into a long-term habit?",
+          "What exercise frequency best promotes good health?"
+        ]
+      },
+      {
+        category: "Finance",
+        examples: [
+          "What should ordinary people know before they start investing?",
+          "How can you manage risk in personal finance?"
+        ]
+      }
+    ];
+
+    // 2) 真随机洗牌（Fisher–Yates）
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // 3) 展示 sample questions（每次登录都调用）
+    function renderSampleQuestions() {
+      const wrapper = document.getElementById("sample-questions");
+      const container = document.getElementById("sq-container");
+      if (!wrapper || !container) return;
+
+      container.innerHTML = "";
+
+      // ✅ 类别随机
+      const blocks = shuffleArray(SAMPLE_QUESTIONS);
+
+      for (const block of blocks) {
+        // ✅ 类别内的两个问题也随机
+        const examples = shuffleArray(block.examples);
+
+        const blockDiv = document.createElement("div");
+        blockDiv.className = "sq-block";
+
+        const title = document.createElement("div");
+        title.className = "sq-category";
+        title.textContent = block.category;
+        blockDiv.appendChild(title);
+
+        for (const q of examples) {
+          // 每条示例就是一行可点击区域
+          const row = document.createElement("div");
+          row.className = "sq-item";
+          row.style.cursor = "pointer";
+          row.style.borderRadius = "10px";
+          row.style.padding = "8px 10px";
+
+          row.onmouseenter = () => (row.style.background = "#f1f1f4");
+          row.onmouseleave = () => (row.style.background = "transparent");
+
+          const text = document.createElement("div");
+          text.className = "sq-text";
+          text.textContent = q;
+
+          // ✅ 点击即问：填入输入框并直接发送
+          row.onclick = () => {
+            const input = document.getElementById("message-input");
+            if (!input) return;
+
+            input.value = q;
+            input.focus();
+
+            // 直接发送（用你已有的 sendMessage()）
+            sendMessage();
+
+            // 更像 ChatGPT：发送后隐藏示例
+            hideSampleQuestions();
+          };
+
+          row.appendChild(text);
+          blockDiv.appendChild(row);
+        }
+
+        container.appendChild(blockDiv);
+      }
+
+      wrapper.style.display = "block";
+    }
+
+    // 4) 隐藏 sample questions
+    function hideSampleQuestions() {
+      const wrapper = document.getElementById("sample-questions");
+      if (wrapper) wrapper.style.display = "none";
+    }
+
+    // 5) Hook 到登录成功（不改你原逻辑，只在成功后“补一个调用”）
+    function showSamplesAfterLogin() {
+      // 每次登录都显示（不缓存）
+      renderSampleQuestions();
+    }
+
+    // ✅ 自动把 sample questions 接到你现有的 login / auto-login 流程：
+    // - 如果你已经有 window.onload，下面不会覆盖，而是“追加监听”
+    window.addEventListener("load", () => {
+      // 只要聊天容器显示了，就展示 sample questions
+      const chat = document.getElementById("chat-container");
+      if (chat && getComputedStyle(chat).display !== "none") {
+        showSamplesAfterLogin();
+      }
+    });
+
+    // ✅ 你登录成功后会把 chat-container display 改成 flex
+    // 我们用一个小小的观察器：一旦 chat-container 被显示，就自动 render
+    (function observeChatContainer() {
+      const chat = document.getElementById("chat-container");
+      if (!chat) return;
+
+      const obs = new MutationObserver(() => {
+        if (getComputedStyle(chat).display !== "none") {
+          showSamplesAfterLogin();
+        }
+      });
+
+      obs.observe(chat, { attributes: true, attributeFilter: ["style"] });
+    })();
+
   </script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
