@@ -834,6 +834,43 @@
     .sq-text { font-size: 1rem; }
   }
 
+
+  /* ===== Welcome Banner ===== */
+  #welcome-banner {
+    width: 50%;
+    margin: 20px auto 10px auto;
+    text-align: center;
+  }
+
+  #welcome-banner h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #007bff;
+  }
+
+  #welcome-banner p {
+    margin-top: 10px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #2d3748;
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    #welcome-banner {
+      width: 92%;
+    }
+
+    #welcome-banner h1 {
+      font-size: 1.6rem;
+    }
+
+    #welcome-banner p {
+      font-size: 1.05rem;
+    }
+  }
+  
   </style>
 </head>
 <body>
@@ -879,15 +916,17 @@
     <!-- Centered chat section -->
     <div id="chat-main">
 
-      <div id="sample-questions" style="display:none;">
-        <div class="sq-title">
-          <h2>Welcome to EzBot!</h2>
-          <p>
-            I am a helpful digital assistant capable of answering questions in many domains.
-            Below are some example questions you might ask me. Happy chatting!
-          </p>
-        </div>
+            <!-- 🔵 Welcome Message (separate, more prominent) -->
+      <div id="welcome-banner" style="display:none;">
+        <h1>Welcome to EzBot!</h1>
+        <p>
+          I am a helpful digital assistant capable of answering questions in many domains.
+          Below are some example questions you might ask me. Happy chatting!
+        </p>
+      </div>
 
+      <!-- 🟢 Sample Questions -->
+      <div id="sample-questions" style="display:none;">
         <div id="sq-container"></div>
       </div>
 
@@ -1298,12 +1337,18 @@
       }
 
       wrapper.style.display = "block";
+
+      const banner = document.getElementById("welcome-banner");
+      if (banner) banner.style.display = "block";
     }
 
     // 4) 隐藏 sample questions
     function hideSampleQuestions() {
       const wrapper = document.getElementById("sample-questions");
       if (wrapper) wrapper.style.display = "none";
+
+      const banner = document.getElementById("welcome-banner");
+      if (banner) banner.style.display = "none";
     }
 
     // 5) Hook 到登录成功（不改你原逻辑，只在成功后“补一个调用”）
