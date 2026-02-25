@@ -1090,7 +1090,7 @@
       }
 
       chatbox.appendChild(messageDiv);
-      chatbox.scrollTop = chatbox.scrollHeight;
+      scrollToBottom();
 
       saveMessage({ text, sender });
     }
@@ -1143,7 +1143,7 @@
             div.innerHTML = marked.parse(msg.text);
             chatbox.appendChild(div);
           }
-          chatbox.scrollTop = chatbox.scrollHeight;
+          scrollToBottom();
         }
 
         historyOffset += messages.length;
@@ -1164,7 +1164,7 @@
         <span class="typing"></span>
       `;
       chatbox.appendChild(div);
-      chatbox.scrollTop = chatbox.scrollHeight;
+      scrollToBottom();
       return div;
     }
 
@@ -1183,7 +1183,7 @@
       const speed = 1;
       const typingInterval = setInterval(() => {
         messageDiv.textContent = plainText.slice(0, i);
-        chatbox.scrollTop = chatbox.scrollHeight;
+        scrollToBottom();
         i++;
         if (i > plainText.length) {
           clearInterval(typingInterval);
@@ -1381,6 +1381,18 @@
 
       obs.observe(chat, { attributes: true, attributeFilter: ["style"] });
     })();
+
+
+    //页面滚动问题
+    function scrollToBottom() {
+      const chatMain = document.getElementById("chat-main");
+      if (chatMain) {
+        chatMain.scrollTo({
+          top: chatMain.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    }
 
   </script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
