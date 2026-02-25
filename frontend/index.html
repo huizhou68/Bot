@@ -74,7 +74,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      overflow-y: auto;
+      overflow: visible;
     }
 
     /* Base message styling */
@@ -1260,6 +1260,7 @@
         if (i > plainText.length) {
           clearInterval(typingInterval);
           messageDiv.innerHTML = formattedHTML;
+          scrollToBottom(true);
 
           setTimeout(() => {
             const copyBtn = document.createElement("button");
@@ -1457,28 +1458,16 @@
 
     //页面滚动问题
     function scrollToBottom(force = false) {
-      const chatbox = document.getElementById("chatbox");
-      const chatMain = document.getElementById("chat-main");
+      const container = document.getElementById("chat-main");
+      if (!container) return;
 
-      // ✅ 优先滚动真正装消息的容器：chatbox
-      if (chatbox) {
-        // 如果用户正在往上翻历史，不要强行拉回底部（除非 force=true）
-        const distanceToBottom = chatbox.scrollHeight - (chatbox.scrollTop + chatbox.clientHeight);
-        const nearBottom = distanceToBottom < 120;
+      const distanceToBottom =
+        container.scrollHeight - (container.scrollTop + container.clientHeight);
 
-        if (force || nearBottom) {
-          chatbox.scrollTop = chatbox.scrollHeight;
-        }
-      }
+      const nearBottom = distanceToBottom < 150;
 
-      // ✅ 兜底：有些布局会让 chat-main 才是滚动容器
-      if (chatMain) {
-        const distanceToBottomMain = chatMain.scrollHeight - (chatMain.scrollTop + chatMain.clientHeight);
-        const nearBottomMain = distanceToBottomMain < 120;
-
-        if (force || nearBottomMain) {
-          chatMain.scrollTop = chatMain.scrollHeight;
-        }
+      if (force || nearBottom) {
+        container.scrollTop = container.scrollHeight;
       }
     }
 
