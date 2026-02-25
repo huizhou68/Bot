@@ -436,13 +436,13 @@
     position: relative;
   }
 
-  .message::before {
+  .message.user::before {
     content: "";
     display: block;
     height: 0;
-    margin-top: -0.3em;   /* lift text visually ≈ 2px at 1rem size */
+    margin-top: -0.3em;
   }
-
+  
 
   /* --- Compact spacing between section titles and bullet lists inside chat messages --- */
   /* Reduce space below titles when followed by a list */
@@ -871,6 +871,78 @@
     }
   }
 
+
+  /* =========================
+   Tighter spacing for BOT Markdown output
+   ========================= */
+
+  /* 只影响 bot 内容，避免影响用户气泡 */
+  .message.bot .message-text,
+  .message.bot {
+    line-height: 1.5;
+  }
+
+  /* 统一压掉默认 margin（这些是造成大空白的主因） */
+  .message.bot p,
+  .message.bot h1, .message.bot h2, .message.bot h3, .message.bot h4, .message.bot h5, .message.bot h6,
+  .message.bot ul, .message.bot ol,
+  .message.bot li,
+  .message.bot blockquote,
+  .message.bot pre {
+    margin: 0;
+  }
+
+  /* 控制块与块之间的间距（关键） */
+  .message.bot p + p,
+  .message.bot p + ul,
+  .message.bot p + ol,
+  .message.bot ul + p,
+  .message.bot ol + p,
+  .message.bot h1 + p, .message.bot h2 + p, .message.bot h3 + p,
+  .message.bot h4 + p, .message.bot h5 + p, .message.bot h6 + p,
+  .message.bot h1 + ul, .message.bot h2 + ul, .message.bot h3 + ul,
+  .message.bot h4 + ul, .message.bot h5 + ul, .message.bot h6 + ul,
+  .message.bot h1 + ol, .message.bot h2 + ol, .message.bot h3 + ol,
+  .message.bot h4 + ol, .message.bot h5 + ol, .message.bot h6 + ol,
+  .message.bot ul + ul,
+  .message.bot ol + ol,
+  .message.bot ol + ul,
+  .message.bot ul + ol,
+  .message.bot blockquote + p,
+  .message.bot p + blockquote,
+  .message.bot pre + p,
+  .message.bot p + pre {
+    margin-top: 0.45em;   /* ✅ 你可以改成 0.35em 更紧凑 */
+  }
+
+  /* 标题本身的上下留白更小 */
+  .message.bot h1, .message.bot h2, .message.bot h3 {
+    line-height: 1.25;
+    margin-top: 0.6em;
+  }
+  .message.bot h4, .message.bot h5, .message.bot h6 {
+    line-height: 1.25;
+    margin-top: 0.5em;
+  }
+
+  /* 列表缩紧：li 的间距更小 */
+  .message.bot ul, .message.bot ol {
+    padding-left: 1.25em;
+  }
+  .message.bot li + li {
+    margin-top: 0.2em;
+  }
+
+  /* 防止“空段落”造成大空白（很多模型会输出空行 -> <p>&nbsp;</p>） */
+  .message.bot p:empty {
+    display: none;
+  }
+
+  /* 如果 marked 产生了 <br> 多次换行导致空白，也让它没那么夸张 */
+  .message.bot br {
+    line-height: 0.9;
+  }
+
   </style>
 </head>
 <body>
@@ -921,7 +993,7 @@
         <h1>Welcome to EzBot!</h1>
         <p>
           I am a helpful digital assistant capable of answering questions in many domains.
-          Below are some example questions you might ask me. You can also ask whatever questions you have in mind. Happy chatting!😉
+          Below are some example questions you might ask me. You can also ask whatever questions you have in mind. Happy chatting! 😉
         </p>
       </div>
 
