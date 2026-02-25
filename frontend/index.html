@@ -1456,13 +1456,29 @@
 
 
     //页面滚动问题
-    function scrollToBottom() {
+    function scrollToBottom(force = false) {
+      const chatbox = document.getElementById("chatbox");
       const chatMain = document.getElementById("chat-main");
+
+      // ✅ 优先滚动真正装消息的容器：chatbox
+      if (chatbox) {
+        // 如果用户正在往上翻历史，不要强行拉回底部（除非 force=true）
+        const distanceToBottom = chatbox.scrollHeight - (chatbox.scrollTop + chatbox.clientHeight);
+        const nearBottom = distanceToBottom < 120;
+
+        if (force || nearBottom) {
+          chatbox.scrollTop = chatbox.scrollHeight;
+        }
+      }
+
+      // ✅ 兜底：有些布局会让 chat-main 才是滚动容器
       if (chatMain) {
-        chatMain.scrollTo({
-          top: chatMain.scrollHeight,
-          behavior: "smooth"
-        });
+        const distanceToBottomMain = chatMain.scrollHeight - (chatMain.scrollTop + chatMain.clientHeight);
+        const nearBottomMain = distanceToBottomMain < 120;
+
+        if (force || nearBottomMain) {
+          chatMain.scrollTop = chatMain.scrollHeight;
+        }
       }
     }
 
