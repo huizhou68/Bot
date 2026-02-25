@@ -238,7 +238,7 @@ async def chat(
             ),
             input=conversation_context,
             temperature=0.7,
-            max_output_tokens=1000,
+            max_output_tokens=1500,
         )
 
         reply = completion.output_text
