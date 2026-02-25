@@ -232,6 +232,7 @@ async def chat(
                 "similar to ChatGPT as possible in depth, scope, and quality. Match the level of "
                 "detail to the complexity of the user's question but try not to be too verbose. "
                 "Limit the number of points to five when giving bulleted responses and increase depth when possible."
+                "Try your best to control the length of each response within 1300 words. Avoid providing incomplete responses."
                 "Provide feedback on the user's questions by praising them appropriately. "
                 "Use the user memory summary to maintain continuity.\n\n"
                 f"Here is what you know about this user:\n{user.context_summary or 'No summary yet.'}"
